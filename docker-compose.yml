@@ -1,0 +1,43 @@
+# Run the whole app with one command:  docker compose up --build
+# Then open http://localhost:8080
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: carequeue
+      MYSQL_USER: carequeue
+      MYSQL_PASSWORD: carequeue
+      TZ: Asia/Kolkata
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      SECRET_KEY: docker-demo-secret-change-me
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: carequeue
+      DB_PASSWORD: carequeue
+      DB_NAME: carequeue
+      CORS_ORIGINS: http://localhost:8080
+      TZ: Asia/Kolkata
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
